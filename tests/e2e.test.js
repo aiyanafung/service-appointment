@@ -32,6 +32,7 @@ describe('E2E: scheduleAppointment', () => {
         // mDocClient.promise.mockResolvedValue({});
         const AWS = require('aws-sdk');
         const mockClient = AWS.DynamoDB.DocumentClient.mock.results[0].value;
+        mockClient.promise.mockResolvedValue({ id: '2025-04-20T15:30:00Z' });
         const evt = makeEvent({
             fullName: 'Jane',
             location: 'Farrish Subaru',
