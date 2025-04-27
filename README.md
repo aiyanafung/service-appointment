@@ -4,11 +4,14 @@ A Serverless AWS Lambda + DynamoDB backend for scheduling service appointments.
 
 ## Setup
 npm install
+
 copy example.env to .env
+
 export API_KEY=mysecretkey
 
 ### export aws access key credential
 export AWS_ACCESS_KEY_ID=…
+
 export AWS_SECRET_ACCESS_KEY=…
 
 ## Start Server Local 
