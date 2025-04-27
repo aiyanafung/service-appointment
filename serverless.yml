@@ -1,0 +1,50 @@
+service: service-appointment
+
+frameworkVersion: '3.51.0'
+
+plugins:
+  - serverless-offline
+  - serverless-dynamodb-local
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: dev
+  region: us-east-1
+  environment:
+    APPOINTMENTS_TABLE: appointments
+    API_KEY: ${env:API_KEY}
+  iamRoleStatements:
+  - Effect: "Allow"
+    Action:
+      - "logs:CreateLogGroup"
+      - "logs:CreateLogStream"
+      - "logs:PutLogEvents"
+    Resource: "*"
+  - Effect: Allow
+    Action:
+      - dynamodb:PutItem
+    Resource: "arn:aws:dynamodb:*:*:table/appointments"
+
+functions:
+  scheduleAppointment:
+    handler: handlers/schedule.handler
+    events:
+      - httpApi:
+          path: /appointments
+          method: post
+
+resources:
+  Resources:
+    AppointmentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.APPOINTMENTS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    
