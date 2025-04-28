@@ -1,65 +1,64 @@
-const AWS = require('aws-sdk');
-const { handler } = require('../handlers/schedule');
+// e2e.test.js
+const axios = require('axios');
+const { deleteAppointmentById } = require('../utils/deleteById');
 
-jest.mock('aws-sdk', () => {
-    // your fake DocumentClient instance
-    const mDocClient = {
-        put: jest.fn().mockReturnThis(),
-        promise: jest.fn()
+const BASE_URL = 'http://localhost:3000';
+const API_KEY = 'mysecretkey';
+const ID = '2025-05-04T15:30:00Z';
+
+describe('E2E: /appointments', () => {
+    beforeAll(async () => {
+        await deleteAppointmentById(ID);
+    });
+
+    const payload = {
+        fullName: 'Jane Doe',
+        location: 'Farrish Subaru',
+        appointmentTime: ID,
+        car: 'Subaru Outback',
+        services: ['Oil Change', 'Tire Rotation']
     };
-    return {
-        DynamoDB: {
-            DocumentClient: jest.fn(() => mDocClient)
-        }
-    };
+
+    it('200 OK: appointment created', async () => {
+        const res = await axios.post(
+            `${BASE_URL}/appointments`,
+            payload,
+            { headers: { 'x-api-key': API_KEY } }
+        );
+
+        expect(res.status).toBe(200);
+        expect(res.data.id).toBe(payload.appointmentTime);
+    });
+
+    it('400 Bad Request: missing fields', async () => {
+        await expect(
+            axios.post(
+                `${BASE_URL}/appointments`,
+                { location: 'Missing everything else' },
+                { headers: { 'x-api-key': API_KEY } }
+            )
+        ).rejects.toMatchObject({ response: { status: 400 } });
+    });
+
+    it('401 Unauthorized: wrong API key', async () => {
+        await expect(
+            axios.post(
+                `${BASE_URL}/appointments`,
+                payload,
+                { headers: { 'x-api-key': 'API_KEY' } }
+            )
+        ).rejects.toMatchObject({ response: { status: 401 } });
+    });
+
+    it('409 Conflict: duplicate slot', async () => {
+        // re-POST the same payload/time
+        await expect(
+            axios.post(
+                `${BASE_URL}/appointments`,
+                payload,
+                { headers: { 'x-api-key': API_KEY } }
+            )
+        ).rejects.toMatchObject({ response: { status: 409 } });
+    });
 });
 
-describe('E2E: scheduleAppointment', () => {
-    const OLD_ENV = process.env;
-    beforeAll(() => {
-        process.env.API_KEY = 'mysecretkey';
-        process.env.APPOINTMENTS_TABLE = 'appointments';
-    });
-    afterAll(() => {
-        process.env = OLD_ENV;
-    });
-    const makeEvent = (body, key = 'mysecretkey') => ({
-        headers: { 'x-api-key': key },
-        body: JSON.stringify(body),
-    });
-
-    it('creates appointment - 200', async () => {
-        // mDocClient.promise.mockResolvedValue({});
-        const AWS = require('aws-sdk');
-        const mockClient = AWS.DynamoDB.DocumentClient.mock.results[0].value;
-        mockClient.promise.mockResolvedValue({ id: '2025-04-20T15:30:00Z' });
-        const evt = makeEvent({
-            fullName: 'Jane',
-            location: 'Farrish Subaru',
-            appointmentTime: '2025-04-20T15:30:00Z',
-            car: 'Subaru Outback',
-            services: ['Oil Change']
-        });
-        const res = await handler(evt);
-        expect(res.statusCode).toBe(200);
-        expect(JSON.parse(res.body).id).toBe('2025-04-20T15:30:00Z');
-    });
-
-    it('conflict on same slot- 409', async () => {
-        const AWS = require('aws-sdk');
-        const mockClient = AWS.DynamoDB.DocumentClient.mock.results[0].value;
-        mockClient.promise.mockRejectedValue({ code: 'ConditionalCheckFailedException' });
-        const evt = makeEvent({
-            fullName: 'Jane',
-            location: 'Farrish Subaru',
-            appointmentTime: '2025-04-20T15:30:00Z',
-            car: 'Subaru',
-            services: ['Oil Change']
-        });
-        const res = await handler(evt);
-        expect(res.statusCode).toBe(409);
-        expect(JSON.parse(res.body)).toEqual({
-            message: 'Appointment conflict at this time slot',
-        });
-    });
-});

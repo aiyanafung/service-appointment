@@ -2,7 +2,6 @@
 
 const AWS = require('aws-sdk');
 const logger = require('../utils/logger');
-//const dynamo = new AWS.DynamoDB.DocumentClient({ region: 'us-east-2' });
 const dynamo = new AWS.DynamoDB.DocumentClient();
 const { APPOINTMENTS_TABLE } = require('../config');
 
