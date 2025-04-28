@@ -22,7 +22,7 @@ npx osls deploy
 
 ## Sample curl commands to hit the endpoint
  curl -X POST \
-  https://wepfj00fx5.execute-api.us-east-1.amazonaws.com/appointments \
+  http://localhost:3000 \
   -H "Content-Type: application/json" \
   -H "x-api-key: mysecretkey" \
   -d '{

@@ -2,7 +2,7 @@
 const axios = require('axios');
 const { deleteAppointmentById } = require('../utils/deleteById');
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = process.env.E2E_TEST_URL;
 const API_KEY = 'mysecretkey';
 const ID = '2025-05-04T15:30:00Z';
 
